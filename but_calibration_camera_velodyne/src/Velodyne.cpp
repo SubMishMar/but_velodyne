@@ -50,7 +50,13 @@ Mat Velodyne::Velodyne::project(Mat projection_matrix, Rect frame, PointCloud<Po
 
   for (PointCloud<Point>::iterator pt = point_cloud.points.begin(); pt < point_cloud.points.end(); pt++)
   {
+    float X = pt->x;
+    float Y = pt->y;
+    float Z = pt->z;
 
+    pt->x = -Y;
+    pt->y = -Z;
+    pt->z = X;
     // behind the camera
     if (pt->z < 0)
     {

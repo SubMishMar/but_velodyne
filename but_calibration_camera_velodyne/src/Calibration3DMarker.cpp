@@ -26,15 +26,15 @@ Calibration3DMarker::Calibration3DMarker(cv::Mat _frame_gray, cv::Mat _P, ::Poin
   Velodyne::Velodyne scan(pc);
   scan.getRings();
   scan.intensityByRangeDiff();
+
   PointCloud<Velodyne::Point> visible_cloud;
-  scan.project(P, Rect(0, 0, 640, 480), &visible_cloud);
+  scan.project(P, Rect(0, 0, 2592, 2048), &visible_cloud);
 
   Velodyne::Velodyne visible_scan(visible_cloud);
   visible_scan.normalizeIntensity();
-  Velodyne::Velodyne thresholded_scan = visible_scan.threshold(0.1);
-
+  Velodyne::Velodyne thresholded_scan = visible_scan.threshold(0.025);
   PointCloud<PointXYZ>::Ptr xyz_cloud_ptr(thresholded_scan.toPointsXYZ());
-
+  //Velodyne::Velodyne::view(xyz_cloud_ptr);
   SampleConsensusModelPlane<PointXYZ>::Ptr model_p(
       new ::SampleConsensusModelPlane<PointXYZ>(xyz_cloud_ptr));
   RandomSampleConsensus<PointXYZ> ransac(model_p);
@@ -45,7 +45,8 @@ Calibration3DMarker::Calibration3DMarker(cv::Mat _frame_gray, cv::Mat _P, ::Poin
   ransac.getInliers(inliers_indicies);
 
   copyPointCloud<PointXYZ>(*xyz_cloud_ptr, inliers_indicies, plane);
-
+//  PointCloud<PointXYZ>::Ptr plane_view_ptr(new PointCloud<PointXYZ>(plane));
+//  Velodyne::Velodyne::view(plane_view_ptr);
   // ---------------- REMOVE LINES ----------------
 
   for (int i = 0; i < 2; i++)
@@ -65,6 +66,8 @@ Calibration3DMarker::Calibration3DMarker(cv::Mat _frame_gray, cv::Mat _P, ::Poin
     PointCloud<PointXYZ> plane_no_line;
     remove_inliers(*plane_ptr, line_inliers, plane_no_line);
     plane = plane_no_line;
+//    PointCloud<PointXYZ>::Ptr plane_view_ptr(new PointCloud<PointXYZ>(plane));
+//    Velodyne::Velodyne::view(plane_view_ptr);
   }
 
 }

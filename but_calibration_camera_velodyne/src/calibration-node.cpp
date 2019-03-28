@@ -137,7 +137,7 @@ void callback(const sensor_msgs::ImageConstPtr& msg_img, const sensor_msgs::Came
   fromROSMsg(*msg_pc, pc);
 
   // x := x, y := -z, z := y,
-  pointcloud = Velodyne::Velodyne(pc).transform(0, 0, 0, M_PI / 2, 0, 0);
+  pointcloud = Velodyne::Velodyne(pc).transform(0, 0, 0, 0, 0, 0);
 
   // calibration:
   writeAllInputs();
