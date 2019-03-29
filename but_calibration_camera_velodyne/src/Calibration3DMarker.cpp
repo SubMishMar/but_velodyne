@@ -34,7 +34,7 @@ Calibration3DMarker::Calibration3DMarker(cv::Mat _frame_gray, cv::Mat _P, ::Poin
   visible_scan.normalizeIntensity();
   Velodyne::Velodyne thresholded_scan = visible_scan.threshold(0.025);
   PointCloud<PointXYZ>::Ptr xyz_cloud_ptr(thresholded_scan.toPointsXYZ());
-  //Velodyne::Velodyne::view(xyz_cloud_ptr);
+//  Velodyne::Velodyne::view(xyz_cloud_ptr);
   SampleConsensusModelPlane<PointXYZ>::Ptr model_p(
       new ::SampleConsensusModelPlane<PointXYZ>(xyz_cloud_ptr));
   RandomSampleConsensus<PointXYZ> ransac(model_p);

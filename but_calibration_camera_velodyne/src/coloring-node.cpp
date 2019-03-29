@@ -80,7 +80,7 @@ void pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr& msg)
   fromROSMsg(*msg, pc);
 
   // x := x, y := -z, z := y,
-  Velodyne::Velodyne pointcloud = Velodyne::Velodyne(pc).transform(0, 0, 0, M_PI / 2, 0, 0);
+  Velodyne::Velodyne pointcloud = Velodyne::Velodyne(pc).transform(0, 0, 0, 0, -M_PI/2, M_PI/2);
 
   Image::Image img(frame_rgb);
   Velodyne::Velodyne transformed = pointcloud.transform(DoF);
@@ -91,8 +91,8 @@ void pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr& msg)
 
   PointCloud<PointXYZRGB> color_cloud = visible_scan.colour(frame_rgb, projection_matrix);
 
-  // reverse axix switching:
-  Eigen::Affine3f transf = getTransformation(0, 0, 0, -M_PI / 2, 0, 0);
+  // reverse axis switching:
+  Eigen::Affine3f transf = getTransformation(0, 0, 0, 0, -M_PI/2, M_PI/2);
   transformPointCloud(color_cloud, color_cloud, transf);
 
   sensor_msgs::PointCloud2 color_cloud2;
