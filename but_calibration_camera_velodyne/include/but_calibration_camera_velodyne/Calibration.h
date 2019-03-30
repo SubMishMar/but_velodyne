@@ -186,6 +186,7 @@ public:
                                     float z_rough, float max_translation, float max_rotation, unsigned steps,
                                     Calibration6DoF &best_calibration, Calibration6DoF &average)
   {
+    ros::Time begin = ros::Time::now();
     scan.intensityByRangeDiff();
     scan = scan.threshold(0.05);
 
@@ -263,6 +264,9 @@ public:
       x += step_transl;
     }
     average /= counter;
+    ros::Time end = ros::Time::now();
+    double duration = end.toSec() - begin.toSec();
+    ROS_INFO_STREAM("Time taken for finer calibration: " << duration);
   }
 
 };

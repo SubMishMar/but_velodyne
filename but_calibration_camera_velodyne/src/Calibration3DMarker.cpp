@@ -28,7 +28,7 @@ Calibration3DMarker::Calibration3DMarker(cv::Mat _frame_gray, cv::Mat _P, ::Poin
   scan.intensityByRangeDiff();
 
   PointCloud<Velodyne::Point> visible_cloud;
-  scan.project(P, Rect(0, 0, 2592, 2048), &visible_cloud);
+  scan.project(P, Rect(0, 0, frame_gray.cols, frame_gray.rows), &visible_cloud);
 
   Velodyne::Velodyne visible_scan(visible_cloud);
   visible_scan.normalizeIntensity();

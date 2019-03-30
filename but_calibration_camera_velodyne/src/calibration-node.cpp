@@ -77,7 +77,7 @@ Calibration6DoF calibration(bool doRefinement = false)
     return Calibration6DoF::wrong();
   }
   float radius2D = accumulate(radii2D.begin(), radii2D.end(), 0.0) / radii2D.size();
-
+  ROS_INFO_STREAM("Avg 2D Radius = " << radius2D);
   vector<float> radii3D;
   vector<Point3f> centers3D;
   if (!marker.detectCirclesInPointCloud(centers3D, radii3D))
@@ -85,7 +85,7 @@ Calibration6DoF calibration(bool doRefinement = false)
     return Calibration6DoF::wrong();
   }
   float radius3D = accumulate(radii3D.begin(), radii3D.end(), 0.0) / radii3D.size();
-
+  ROS_INFO_STREAM("Avg 3D Radius = " << radius3D);
   // rough calibration
   Calibration6DoF translation = Calibration::findTranslation(centers2D, centers3D, projection_matrix, radius2D,
                                                              radius3D);
@@ -95,9 +95,9 @@ Calibration6DoF calibration(bool doRefinement = false)
     ROS_INFO("Coarse calibration:");
     translation.print();
     ROS_INFO("Refinement process started - this may take a minute.");
-    size_t divisions = 5;
-    float distance_transl = 0.02;
-    float distance_rot = 0.01;
+    size_t divisions = 50;
+    float distance_transl = 0.2;
+    float distance_rot = 0.1;
     Calibration6DoF best_calibration, avg_calibration;
     Calibration::calibrationRefinement(Image::Image(frame_gray), pointcloud, projection_matrix, translation.DoF[0],
                                        translation.DoF[1], translation.DoF[2], distance_transl, distance_rot, divisions,

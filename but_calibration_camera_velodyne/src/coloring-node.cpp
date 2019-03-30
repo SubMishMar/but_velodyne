@@ -92,7 +92,7 @@ void pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr& msg)
   PointCloud<PointXYZRGB> color_cloud = visible_scan.colour(frame_rgb, projection_matrix);
 
   // reverse axis switching:
-  Eigen::Affine3f transf = getTransformation(0, 0, 0, 0, -M_PI/2, M_PI/2);
+  Eigen::Affine3f transf = getTransformation(0, 0, 0, -M_PI/2, 0, -M_PI/2);
   transformPointCloud(color_cloud, color_cloud, transf);
 
   sensor_msgs::PointCloud2 color_cloud2;
