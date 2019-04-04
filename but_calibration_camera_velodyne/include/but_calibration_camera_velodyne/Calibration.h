@@ -191,7 +191,6 @@ public:
     scan = scan.threshold(0.05);
 
     img = Image::Image(img.computeIDTEdgeImage());
-
     float x_min = x_rough - max_translation;
     float y_min = y_rough - max_translation;
     float z_min = z_rough - max_translation;
