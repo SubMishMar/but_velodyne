@@ -182,8 +182,18 @@ public:
     return Calibration6DoF(translation[INDEX::X], translation[INDEX::Y], translation[INDEX::Z], 0, 0, 0, 0);
   }
 
-  static void calibrationRefinement(Image::Image img, Velodyne::Velodyne scan, cv::Mat P, float x_rough, float y_rough,
-                                    float z_rough, float max_translation, float max_rotation, unsigned steps,
+  static void calibrationRefinement(Image::Image img,
+                                    Velodyne::Velodyne scan,
+                                    cv::Mat P,
+                                    float x_rough,
+                                    float y_rough,
+                                    float z_rough,
+                                    float x_rot_rough,
+                                    float y_rot_rough,
+                                    float z_rot_rough,
+                                    float max_translation,
+                                    float max_rotation,
+                                    unsigned steps,
                                     Calibration6DoF &best_calibration, Calibration6DoF &average)
   {
     ros::Time begin = ros::Time::now();
@@ -201,7 +211,7 @@ public:
     float step_transl = max_translation * 2 / (steps - 1);
     float step_rot = max_rotation * 2 / (steps - 1);
 
-    Velodyne::Velodyne transformed = scan.transform(x_rough, y_rough, z_rough, 0, 0, 0);
+    Velodyne::Velodyne transformed = scan.transform(x_rough, y_rough, z_rough, x_rot_rough, y_rot_rough, z_rot_rough);
     float rough_val = Similarity::edgeSimilarity(img, transformed, P);
 
     best_calibration.set(x_rough, y_rough, z_rough, 0, 0, 0, rough_val);

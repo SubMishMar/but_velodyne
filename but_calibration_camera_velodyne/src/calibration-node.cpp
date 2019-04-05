@@ -30,6 +30,8 @@
 #include <but_calibration_camera_velodyne/Calibration3DMarker.h>
 #include <but_calibration_camera_velodyne/Image.h>
 
+#include <opencv2/core/eigen.hpp>
+
 using namespace cv;
 using namespace std;
 using namespace ros;
@@ -91,31 +93,45 @@ Calibration6DoF calibration(bool doRefinement = false)
   cv::Mat tvec(3,1,cv::DataType<double>::type);
 
   cv::solvePnP(centers3D, centers2D, cameraMatrix, distCoeffs, rvec, tvec, false, CV_ITERATIVE);
-  std::cout << "tvec" << tvec << std::endl;
-  std::cout << "rvec" << rvec << std::endl;
+
   cv::Mat C_R_L;
   cv::Rodrigues(rvec, C_R_L);
-  std::cout << C_R_L << std::endl;
-  std::vector<cv::Point2f> imagePoints;
-  cv::projectPoints(centers3D, rvec, tvec, cameraMatrix, distCoeffs, imagePoints, cv::noArray(), 0);
-  for(int i=0;i<centers2D.size();i++){
-    std::cout << centers2D[i].x << "\t" << centers2D[i].y << std::endl;
-    cv::circle(frame_rgb, centers2D[i], 16, CV_RGB(255, 0, 0), -1, 8, 0);
-    cv::circle(frame_rgb, imagePoints[i], 16, CV_RGB(0, 255, 0), -1, 8, 0);
-  }
-  std::cout << std::endl;
+  Eigen::Matrix3f c_R_l;
+  cv::cv2eigen(C_R_L, c_R_l);
 
-  for(int i=0;i<imagePoints.size();i++){
-    std::cout << imagePoints[i].x << "\t" << imagePoints[i].y << std::endl;
+  Eigen::Vector3f euler_angles = c_R_l.eulerAngles(2, 1, 0);
+  std::cout << tvec << std::endl;
+  std::cout << euler_angles << std::endl;
+  for(int i=0;i<centers3D.size();i++){
+    std::cout << centers3D[i].x << "\t" << centers3D[i].y << "\t" << centers3D[i].z << std::endl;
   }
-  std::cout << std::endl;
-  cv::Mat frame_resized;
-  cv::resize(frame_rgb, frame_resized, cv::Size(), 0.25, 0.25);
-  cv::imshow("reprojection", frame_resized);
-  cv::waitKey(-1);
+//  std::vector<cv::Point2f> imagePoints;
+//  cv::projectPoints(centers3D, rvec, tvec, cameraMatrix, distCoeffs, imagePoints, cv::noArray(), 0);
+//  for(int i=0;i<centers2D.size();i++){
+//    std::cout << centers2D[i].x << "\t" << centers2D[i].y << std::endl;
+//    cv::circle(frame_rgb, centers2D[i], 16, CV_RGB(255, 0, 0), -1, 8, 0);
+//    cv::circle(frame_rgb, imagePoints[i], 16, CV_RGB(0, 255, 0), -1, 8, 0);
+//  }
+//  std::cout << std::endl;
+//
+//  for(int i=0;i<imagePoints.size();i++){
+//    std::cout << imagePoints[i].x << "\t" << imagePoints[i].y << std::endl;
+//  }
+//  std::cout << std::endl;
+//  cv::Mat frame_resized;
+//  cv::resize(frame_rgb, frame_resized, cv::Size(), 0.25, 0.25);
+//  cv::imshow("reprojection", frame_resized);
+//  cv::waitKey(-1);
   // rough calibration
   Calibration6DoF translation = Calibration::findTranslation(centers2D, centers3D, projection_matrix, radius2D,
                                                              radius3D);
+//  translation.DoF[0] = tvec.at<double>(0);
+//  translation.DoF[1] = tvec.at<double>(1);
+//  translation.DoF[2] = tvec.at<double>(2);
+//  translation.DoF[3] = euler_angles(2);
+//  translation.DoF[4] = euler_angles(1);
+//  translation.DoF[5] = euler_angles(0);
+
   if (doRefinement)
   {
     ROS_INFO("Coarse calibration:");
@@ -125,9 +141,20 @@ Calibration6DoF calibration(bool doRefinement = false)
     float distance_transl = 0.02;
     float distance_rot = 0.01;
     Calibration6DoF best_calibration, avg_calibration;
-    Calibration::calibrationRefinement(Image::Image(frame_gray), pointcloud, projection_matrix, translation.DoF[0],
-                                       translation.DoF[1], translation.DoF[2], distance_transl, distance_rot, divisions,
-                                       best_calibration, avg_calibration);
+    Calibration::calibrationRefinement(Image::Image(frame_gray),
+                                       pointcloud,
+                                       projection_matrix,
+                                       translation.DoF[0],
+                                       translation.DoF[1],
+                                       translation.DoF[2],
+                                       translation.DoF[3],
+                                       translation.DoF[4],
+                                       translation.DoF[5],
+                                       distance_transl,
+                                       distance_rot,
+                                       divisions,
+                                       best_calibration,
+                                       avg_calibration);
     return avg_calibration;
   }
   else
