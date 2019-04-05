@@ -48,6 +48,8 @@ double RADIUS; // 8.25cm
 Mat projection_matrix;
 Mat frame_rgb;
 Velodyne::Velodyne pointcloud;
+cv::Mat cameraMatrix(3, 3, cv::DataType<double>::type);
+cv::Mat distCoeffs(4,1,cv::DataType<double>::type);
 bool doRefinement = false;
 
 bool writeAllInputs()
@@ -84,15 +86,36 @@ Calibration6DoF calibration(bool doRefinement = false)
     return Calibration6DoF::wrong();
   }
   float radius3D = accumulate(radii3D.begin(), radii3D.end(), 0.0) / radii3D.size();
+
+  cv::Mat rvec(3,1,cv::DataType<double>::type);
+  cv::Mat tvec(3,1,cv::DataType<double>::type);
+
+  cv::solvePnP(centers3D, centers2D, cameraMatrix, distCoeffs, rvec, tvec, false, CV_ITERATIVE);
+  std::cout << "tvec" << tvec << std::endl;
+  std::cout << "rvec" << rvec << std::endl;
+  cv::Mat C_R_L;
+  cv::Rodrigues(rvec, C_R_L);
+  std::cout << C_R_L << std::endl;
+  std::vector<cv::Point2f> imagePoints;
+  cv::projectPoints(centers3D, rvec, tvec, cameraMatrix, distCoeffs, imagePoints, cv::noArray(), 0);
+  for(int i=0;i<centers2D.size();i++){
+    std::cout << centers2D[i].x << "\t" << centers2D[i].y << std::endl;
+    cv::circle(frame_rgb, centers2D[i], 16, CV_RGB(255, 0, 0), -1, 8, 0);
+    cv::circle(frame_rgb, imagePoints[i], 16, CV_RGB(0, 255, 0), -1, 8, 0);
+  }
+  std::cout << std::endl;
+
+  for(int i=0;i<imagePoints.size();i++){
+    std::cout << imagePoints[i].x << "\t" << imagePoints[i].y << std::endl;
+  }
+  std::cout << std::endl;
+  cv::Mat frame_resized;
+  cv::resize(frame_rgb, frame_resized, cv::Size(), 0.25, 0.25);
+  cv::imshow("reprojection", frame_resized);
+  cv::waitKey(-1);
   // rough calibration
   Calibration6DoF translation = Calibration::findTranslation(centers2D, centers3D, projection_matrix, radius2D,
                                                              radius3D);
-
-  cv::Mat cTl = cv::Mat::eye(cv::Size(4, 4), CV_32F);
-  cTl.at<float>(0,3) = translation.DoF[0];
-  cTl.at<float>(1,3) = translation.DoF[1];
-  cTl.at<float>(2,3) = translation.DoF[2];
-  std::cout << projection_matrix.mul(cTl) << std::endl;
   if (doRefinement)
   {
     ROS_INFO("Coarse calibration:");
@@ -120,6 +143,23 @@ void callback(const sensor_msgs::ImageConstPtr& msg_img, const sensor_msgs::Came
   ROS_INFO_STREAM("Image received at " << msg_img->header.stamp.toSec());
   ROS_INFO_STREAM( "Camera info received at " << msg_info->header.stamp.toSec());
   ROS_INFO_STREAM( "Velodyne scan received at " << msg_pc->header.stamp.toSec());
+
+  cameraMatrix.at<double>(0, 0) = msg_info->K[0];
+  cameraMatrix.at<double>(0, 1) = msg_info->K[1];
+  cameraMatrix.at<double>(0, 2) = msg_info->K[2];
+
+  cameraMatrix.at<double>(1, 0) = msg_info->K[3];
+  cameraMatrix.at<double>(1, 1) = msg_info->K[4];
+  cameraMatrix.at<double>(1, 2) = msg_info->K[5];
+
+  cameraMatrix.at<double>(2, 0) = msg_info->K[6];
+  cameraMatrix.at<double>(2, 1) = msg_info->K[7];
+  cameraMatrix.at<double>(2, 2) = msg_info->K[8];
+
+  distCoeffs.at<double>(0) = msg_info->D[0];
+  distCoeffs.at<double>(1) = msg_info->D[1];
+  distCoeffs.at<double>(2) = msg_info->D[2];
+  distCoeffs.at<double>(3) = msg_info->D[3];
 
   // Loading camera image:
   cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(msg_img, sensor_msgs::image_encodings::BGR8);
